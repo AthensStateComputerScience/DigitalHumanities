@@ -21,6 +21,7 @@ using namespace std;
 
 // GLOBALS --------------------------------------------------------------------------------------
 ifstream input;
+ofstream output;
 
 //timer class to record computational time of the algorithms
 class Timer
@@ -51,23 +52,21 @@ void compare(vector<string>&);
 // MAIN -----------------------------------------------------------------------------------------
 int main()
 {
+	//open the output file
+	output.open("Result.csv");
+
+	//header for our csv file
+	output << "Method, File 1 -> File 2, File 2 -> File 3, File 1 -> File 3, Computed Time" << endl;
+
 	vector<string> fileList, comparisonStrings;
 	string inputDir;
-
-	//create the timer, compute used time after each call then reset the timer.
-	Timer time;
 
 	inputDir = getInputDir();
 	getFilesInDirectory(fileList, inputDir);
 	processFiles(fileList, comparisonStrings);
 	compare(comparisonStrings);
 
-	//get the computed time
-	double computedTime = time.elapsed();
-	//output the computed time
-	cout << "The amount of time used for this method is " << computedTime << endl;
-	//reset the timer for the next algorithm
-	time.reset();
+	output.close();
 
 	return 0;
 }
@@ -193,21 +192,50 @@ void processFiles(vector<string>& files, vector<string>& texts){
 
 // compare() - provides the comparison through specified algorithm(s)
 void compare(vector<string>& strings){
+	//create an instance of the timer class
+	Timer time;
+
+	//variable to store the computed time
+	double computedTime;
+
 	// compare textx with each implemented algorithm
-	cout << "Levenshtens's Distance:" << endl;
+	
 	int i = 0;
+	cout << "Levenshtens's Distance:" << endl;
+	output << "Levenshtein's Distance, ";
 	for (std::vector<string>::iterator it = strings.begin(); it != strings.end(); ++it, ++i){
 		int j = i + 1;
+		
 		for (std::vector<string>::iterator jt = it + 1; jt != strings.end(); ++jt, ++j){
-			cout << "file " << i+1 << " -> file " << j+1 << ": " 
+			cout << "file " << i + 1 << " -> file " << j + 1 << ": "
 				<< levenshteinDistance(strings[i], strings[j]) << endl;
-
-			// non-levenshteins algorithm a 
-			// non-levenshteins algorithm b
-			// non-levenshteins algorithm c
-			// work on formatting and consider .csv table output
-		}
+			output << levenshteinDistance(strings[i], strings[j]) << ", ";
+			}	
 	}
+	//compute the time used and reset timer
+	computedTime = time.elapsed();
+	cout << "The amount of time used for this method is " << computedTime << " seconds" << endl;
+	output << computedTime << endl;
+	time.reset();
+
+	// non-levenshteins algorithm a
+	/*computedTime = time.elapsed();
+	cout << "The amount of time used for this method is " << computedTime << " seconds" << endl;
+	output << computedTime << endl;
+	time.reset();*/
+
+	// non-levenshteins algorithm b
+	/*computedTime = time.elapsed();
+	cout << "The amount of time used for this method is " << computedTime << " seconds" << endl;
+	output << computedTime << endl;
+	time.reset();*/
+
+	// non-levenshteins algorithm c
+	/*computedTime = time.elapsed();
+	cout << "The amount of time used for this method is " << computedTime << " seconds" << endl;
+	output << computedTime << endl;
+	time.reset();*/
+	// work on formatting and consider .csv table output
 }
 
 // STRING EDITING METRICS FUNCTIONS ---------------------------------
