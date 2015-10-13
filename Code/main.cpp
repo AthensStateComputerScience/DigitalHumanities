@@ -8,9 +8,11 @@
 
 
 #include <string>
+#include <cstring>
 #include <iostream>
 #include <fstream>
 #include <cctype>
+#include <cmath>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <vector>
@@ -40,33 +42,57 @@ private:
 	std::chrono::time_point<clock_> beg_;
 };
 
+// function pointer used as param to transform
+// to wrap around the function we want
+// as it is defined in both cctype and iostream
+struct to_upper{
+	int operator() (int ch){
+		return std::toupper(ch);
+	}
+};
+
 
 // FUNCTION PROTOTYPES --------------------------------------------------------------------------
 string getInputDir();
 void openInput(const string&);
+void levenshteins(vector<string>&);
 size_t levenshteinDistance(const string&, const string&);
+void jaroWinkler(vector<string>&);
+const double jaroWinklerDistance(string, string);
+const double jaroDistance(const int&, const int&, const int&, const int&);
+void setJaroValues(const string&, const string&, const int&, int&, int&, const int&, const int&);
+const int jaroCommonPrefix(const string&, const string&, const int&, const int&);
+const double jaroPFX(const int&, const double&, const double&);
+void huntMcIlroy(vector<string>&);
+double huntMcIlroyDistance(const string&, const string&);
+void needlemanWunsch(vector<string>&);
+double needlemanWunschDistance(const string&, const string&);
 void getFilesInDirectory(vector<string>&, const string&);
 void processFiles(vector<string>&, vector<string>&);
 void compare(vector<string>&);
+void setupOutput(vector<string>&);
 
 // MAIN -----------------------------------------------------------------------------------------
 int main()
 {
-	//open the output file
-	output.open("Result.csv");
-
-	//header for our csv file
-	output << "Method, File 1 -> File 2, File 2 -> File 3, File 1 -> File 3, Computed Time" << endl;
-
+	// declare variables
 	vector<string> fileList, comparisonStrings;
 	string inputDir;
 
+	// get input directory from user
 	inputDir = getInputDir();
-	getFilesInDirectory(fileList, inputDir);
-	processFiles(fileList, comparisonStrings);
-	compare(comparisonStrings);
 
-	output.close();
+	// get file list from input directory
+	getFilesInDirectory(fileList, inputDir);
+
+	// process the files, strip blank spaces, build strings vector
+	processFiles(fileList, comparisonStrings);
+
+	// open output file, place column headers
+	setupOutput(fileList);
+
+	// compare and get results
+	compare(comparisonStrings);
 
 	return 0;
 }
@@ -83,6 +109,23 @@ void openInput(const string &fileName){
 		cerr << "ERROR: Failed to open input file: " << fileName;
 		exit(EXIT_FAILURE);
 	}
+}
+
+
+// setupOutput() - opens the output file and puts dynamic header in place
+void setupOutput(vector<string>& fileList){
+	//open the output file
+	output.open("Result.csv");
+	//print column headers for csv file
+	output << "Method, ";
+	int i = 0;
+	for (std::vector<string>::iterator it = fileList.begin(); it != fileList.end(); ++it, ++i){
+		int j = i + 1;
+		for (std::vector<string>::iterator jt = it + 1; jt != fileList.end(); ++jt, ++j){
+			output << i + 1 << " -> " << j + 1 << ", ";
+		}
+	}
+	output << "Time" << endl;
 }
 
 
@@ -180,6 +223,8 @@ void processFiles(vector<string>& files, vector<string>& texts){
 			filetext = filetext + line;
 		}
 
+		cout << filetext << endl;
+
 		// push it into the texts vector
 		texts.push_back(filetext);
 
@@ -190,55 +235,341 @@ void processFiles(vector<string>& files, vector<string>& texts){
 }
 
 
-// compare() - provides the comparison through specified algorithm(s)
-void compare(vector<string>& strings){
+// void levenshteins() - loops through all files' strings and implementing levenshteinsDistance
+void levenshteins(vector<string>& strings){
 	//create an instance of the timer class
 	Timer time;
-
-	//variable to store the computed time
-	double computedTime;
-
-	// compare textx with each implemented algorithm
 	
+	// loop through the strings comparing
 	int i = 0;
-	cout << "Levenshtens's Distance:" << endl;
+	cout << "Levenshteins's Distance:" << endl;
 	output << "Levenshtein's Distance, ";
 	for (std::vector<string>::iterator it = strings.begin(); it != strings.end(); ++it, ++i){
 		int j = i + 1;
-		
 		for (std::vector<string>::iterator jt = it + 1; jt != strings.end(); ++jt, ++j){
-			cout << "file " << i + 1 << " -> file " << j + 1 << ": "
-				<< levenshteinDistance(strings[i], strings[j]) << endl;
-			output << levenshteinDistance(strings[i], strings[j]) << ", ";
-			}	
+			size_t result = levenshteinDistance(strings[i], strings[j]);
+			cout << "file " << i + 1 << " -> file " << j + 1 << ": " << result << endl;
+			output << result << ", ";
+		}
 	}
-	//compute the time used and reset timer
-	computedTime = time.elapsed();
-	cout << "The amount of time used for this method is " << computedTime << " seconds" << endl;
-	output << computedTime << endl;
-	time.reset();
 
-	// non-levenshteins algorithm a
-	/*computedTime = time.elapsed();
-	cout << "The amount of time used for this method is " << computedTime << " seconds" << endl;
+	//compute the time used and show it
+	double computedTime = time.elapsed();
+	cout << "Time used for this method: " << computedTime << " seconds" << endl << endl;
 	output << computedTime << endl;
-	time.reset();*/
+}
 
-	// non-levenshteins algorithm b
-	/*computedTime = time.elapsed();
-	cout << "The amount of time used for this method is " << computedTime << " seconds" << endl;
-	output << computedTime << endl;
-	time.reset();*/
 
-	// non-levenshteins algorithm c
-	/*computedTime = time.elapsed();
-	cout << "The amount of time used for this method is " << computedTime << " seconds" << endl;
+// void jaroWinkler() - loops through all files' strings and implementing jaroWinklerDistance
+void jaroWinkler(vector<string>& strings){
+	//create an instance of the timer class
+	Timer time;
+
+	// loop through the strings comparing
+	int i = 0;
+	cout << "Jaro-Winkler Distance:" << endl;
+	output << "Jaro-Winkler Distance, ";
+	for (std::vector<string>::iterator it = strings.begin(); it != strings.end(); ++it, ++i){
+		int j = i + 1;
+		for (std::vector<string>::iterator jt = it + 1; jt != strings.end(); ++jt, ++j){
+			double result = jaroWinklerDistance(strings[i], strings[j]);
+			//double result = jaroWinklerDistance("DWAYNE", "DUANE");
+			cout << "file " << i + 1 << " -> file " << j + 1 << ": " << result << endl;
+			output << result << ", ";
+		}
+	}
+
+	//compute the time used and show it
+	double computedTime = time.elapsed();
+	cout << "Time used for this method: " << computedTime << " seconds" << endl << endl;
 	output << computedTime << endl;
-	time.reset();*/
-	// work on formatting and consider .csv table output
+}
+
+
+// void huntMcIlroy() - loops through all files' strings and implementing huntMcIlroyDistance
+void huntMcIlroy(vector<string>& strings){
+	//create an instance of the timer class
+	Timer time;
+
+	// loop through the strings comparing
+	int i = 0;
+	cout << "Hunt-McIlroy Distance:" << endl;
+	output << "Hunt-McIlroy Distance, ";
+	for (std::vector<string>::iterator it = strings.begin(); it != strings.end(); ++it, ++i){
+		int j = i + 1;
+		for (std::vector<string>::iterator jt = it + 1; jt != strings.end(); ++jt, ++j){
+			double result = huntMcIlroyDistance(strings[i], strings[j]);
+			cout << "file " << i + 1 << " -> file " << j + 1 << ": " << result << endl;
+			output << result << ", ";
+		}
+	}
+
+	//compute the time used and show it
+	double computedTime = time.elapsed();
+	cout << "Time used for this method: " << computedTime << " seconds" << endl << endl;
+	output << computedTime << endl;
+}
+
+
+// void needlemanWunsch() - loops through all files' strings and implementing needlemanWunschDistance
+void needlemanWunsch(vector<string>& strings){
+	//create an instance of the timer class
+	Timer time;
+
+	// loop through the strings comparing
+	int i = 0;
+	cout << "Needleman-Wunsch Distance:" << endl;
+	output << "Needleman-Wunsch Distance, ";
+	for (std::vector<string>::iterator it = strings.begin(); it != strings.end(); ++it, ++i){
+		int j = i + 1;
+		for (std::vector<string>::iterator jt = it + 1; jt != strings.end(); ++jt, ++j){
+			double result = needlemanWunschDistance(strings[i], strings[j]);
+			cout << "file " << i + 1 << " -> file " << j + 1 << ": " << result << endl;
+			output << result << ", ";
+		}
+	}
+
+	//compute the time used and show it
+	double computedTime = time.elapsed();
+	cout << "Time used for this method: " << computedTime << " seconds" << endl << endl;
+	output << computedTime << endl;
+}
+
+
+// compare() - provides the comparison through specified algorithm(s)
+void compare(vector<string>& strings){
+
+	// compare texts with each implemented algorithm
+	levenshteins(strings);
+	jaroWinkler(strings);
+	huntMcIlroy(strings);
+	needlemanWunsch(strings);
+
+	output.close();
 }
 
 // STRING EDITING METRICS FUNCTIONS ---------------------------------
+
+
+// needlemanWunschDistance() - determines Needleman-Wunsch distance between 2 strings
+double needlemanWunschDistance(const string&a1, const string&b1){
+	const size_t alphabets = 130;
+	int alpha[alphabets][alphabets];
+
+	string AlignmentA, AlignmentB;
+
+	int gap_penalty = -2;            //THIS IS THE ALLOCATED SCORE FOR THE GAP PENALTY
+
+	for (size_t i = 0; i < alphabets; i++)
+	{
+		for (size_t j = 0; j < alphabets; j++)
+		{
+			if (i == j)
+			{
+				alpha[i][j] = 1;    //THIS IS THE ALLOCATED SCORE FOR A MATCH
+			}
+			else
+			{
+				alpha[i][j] = -2;   //THIS IS THE ALLOCATED SCORE FOR A MISMATCH
+			}
+		}
+	}
+
+	size_t n = a1.size();
+	size_t m = b1.size();
+
+	vector<vector<int> > A(n + 1, vector<int>(m + 1));
+
+	for (size_t i = 0; i <= m; ++i)
+	{
+		A[0][i] = 0;       //gap_Pen * i;
+	}
+	for (size_t j = 0; j <= n; ++j)
+	{
+		A[j][0] = 0;       //gap_Pen * j;
+	}
+
+	for (size_t i = 1; i <= n; ++i) //n
+	{
+		for (size_t j = 1; j <= m; ++j)  //m
+		{
+			char x_i = a1[i - 1];  // Assigns x_i and y_j a char from the string
+			char y_j = b1[j - 1];
+			int x_i_a = (int)x_i;
+			int y_j_b = (int)y_j;
+
+			int Match = A[i - 1][j - 1] + alpha[x_i_a][y_j_b];
+			int Delete = A[i - 1][j] + gap_penalty;
+			int Insert = A[i][j - 1] + gap_penalty;
+
+			if (Match >= Delete && Match >= Insert)
+			{
+				A[i][j] = Match;
+			}
+			else if (Delete >= Match && Delete >= Insert)
+			{
+				A[i][j] = Delete;
+			}
+			else
+			{
+				A[i][j] = Insert;
+			}
+		}
+	}
+	AlignmentA = "";
+	AlignmentB = "";
+	size_t j = m;
+	size_t i = n;
+
+	for (; i >= 1 && j >= 1; --i)
+	{
+		char x_i = a1[i - 1];
+		char y_j = b1[j - 1];
+		int x_i_a = (int)x_i;
+		int y_j_b = (int)y_j;
+		if (A[i][j] == A[i - 1][j - 1] + alpha[x_i_a][y_j_b])
+		{
+			AlignmentA = x_i + AlignmentA;
+			AlignmentB = y_j + AlignmentB;
+			--j;
+		}
+		else if (A[i][j] == A[i - 1][j] + gap_penalty)
+		{
+			AlignmentA = x_i + AlignmentA;
+			AlignmentB = '-' + AlignmentB;
+		}
+		else
+		{
+			AlignmentA = '-' + AlignmentA;
+			AlignmentB = y_j + AlignmentB;
+			--j;
+		}
+	}
+
+	while (i >= 1 && j < 1)
+	{
+		AlignmentA = a1[i - 1] + AlignmentA;
+		AlignmentB = '-' + AlignmentB;
+		--i;
+	}
+	while (j >= 1 && i < 1)
+	{
+		AlignmentA = '-' + AlignmentA;
+		AlignmentB = b1[j - 1] + AlignmentB;
+		--j;
+	}
+	double score = A[n][m];
+	return score;
+}
+
+
+// huntMcIlroyDistance() - determines Hunt-McIlroy distance between 2 strings
+double huntMcIlroyDistance(const string& s1, const string& s2){
+	// fill in
+	return 0.0;
+}
+
+
+// jaroWinklerDistance() - determines Jaro-Winkler distance between 2 strings
+const double jaroWinklerDistance(string str1, string str2){
+	const int m(str1.size());
+	const int n(str2.size());
+	// if either string is blank, return 0.0 immediately
+	if (min(m, n) == 0) return 0.0;
+
+	// change pass by value copies of strings to all uppercase with std::transform algorithm
+	transform(str1.begin(), str1.end(), str1.begin(), to_upper());
+	transform(str2.begin(), str2.end(), str2.begin(), to_upper());
+
+	// set pre-defined constants for the algorithm
+	const double p = 0.1;			// constant scaling factor p
+	const double boost = 0.7;		// boost threshold, compared against calculated jaro score
+
+	// initialize variables that should change
+	int half_t = 0;					// number of calculated transpositions, adjusted in setJaroValues()
+	int matches = 0;				// number of calculated matches, adjusted in setJaroValues()
+
+	// calculate other values used in the final algorithm
+	const int matchRange = int(floor(max(m, n) / 2)) - 1;
+	setJaroValues(str1, str2, matchRange, matches, half_t, m, n);
+	const double jaro = jaroDistance(matches, half_t, m, n);
+
+	// return the calculated jaro-winkler distance
+	if (jaro < boost)
+		return jaro;
+	const int l = jaroCommonPrefix(str1, str2, m, n);
+	return jaro + jaroPFX(l, p, jaro);
+}
+
+
+// setJaroValues() - sets the number of matches and transpositions used in jaroDistance()
+void setJaroValues( const string& s1, const string& s2, const int& range, 
+					int& numMatches, int& halfTrans, const int& m, const int& n){
+	int i = 0, j = 0, transpositions = 0, start = 0;
+	int lo, hi;
+
+	// setup match flag vectors
+	vector<int> v1, v2;
+	v1.resize(m, 0);
+	v2.resize(n, 0);
+
+
+	// set number of matches within range, setting flags
+	for (i = 0; i < m; ++i){
+		lo = ((i - range) < 1) ? 0 : i - range; 
+		hi = ((i + range) >= n) ? n : i + range;
+		for (j = lo; j < hi; j++){
+			if (v2[j] != 1 && s1[i] == s2[j]){
+				numMatches++;
+				v1[i] = 1;
+				v2[j] = 1;
+				break; // only do this for the first matching character
+			}
+		}
+	}
+
+	// determine the number of transpositions
+	i = j = start = 0;
+	for (i = 0; i < m; i++){
+		hi = ((i + range) >= n) ? n : i + 1 + range;
+		if (v1[i] == 1){
+			for (j = start; j < hi; j++){
+				if (v2[j] == 1){
+					start = j + 1;
+					break;
+				}
+			}
+			if (s1[i] != s2[j]) transpositions++;
+		}
+	}
+	halfTrans = transpositions/2;
+}
+
+
+// jaroDistance() - returns the calculated jaro score
+const double jaroDistance(const int& _m, const int& half_t, const int& m, const int& n){
+	return (_m == 0) ? 0.0 : (1/3.0) *(_m / double(m) + _m / double(n) + (_m - half_t) / double(_m));
+}
+
+
+// jaroCommonPrefix() - determines the common prefix weight used in Jaro-Winkler score
+const int jaroCommonPrefix(const string& s1, const string& s2, const int& m, const int& n){
+	int l = 0;
+	int prefixMax = min(min(m, n), 4);
+	for (int icp = 0; icp < prefixMax; ++icp){
+		if (s1[icp] == s2[icp])
+			l++;
+		else
+			break;
+	}
+	return l;
+}
+
+
+// jaroPFX() - from the jaro-winkler algorithm, returns the value (lp(1-jaroDistance))
+const double jaroPFX(const int& l, const double& p, const double& dj){
+	return l*p*(1 - dj);
+}
 
 /*
  * 
@@ -288,6 +619,8 @@ size_t levenshteinDistance(const string &s1, const string &s2){
 
 	return result;
 }
+
+
 
 
 
