@@ -42,13 +42,17 @@ private:
 	std::chrono::time_point<clock_> beg_;
 };
 
-// function pointer used as param to transform
-// to wrap around the function we want
-// as it is defined in both cctype and iostream
+// to_upper forces use std::toupper rather than string::toupper
 struct to_upper{
 	int operator() (int ch){
 		return std::toupper(ch);
 	}
+};
+
+//This struct represents the coordinate values of the locations of k-matches
+struct kCandidate {
+	int coord1;
+	int coord2;
 };
 
 
@@ -65,6 +69,8 @@ const int jaroCommonPrefix(const string&, const string&, const int&, const int&)
 const double jaroPFX(const int&, const double&, const double&);
 void huntMcIlroy(vector<string>&);
 double huntMcIlroyDistance(const string&, const string&);
+int huntMcIlroyAlg(kCandidate*, int, int, int);
+void binSearch(kCandidate*, int, int, int);
 void needlemanWunsch(vector<string>&);
 double needlemanWunschDistance(const string&, const string&);
 void getFilesInDirectory(vector<string>&, const string&);
@@ -463,10 +469,78 @@ double needlemanWunschDistance(const string&a1, const string&b1){
 }
 
 
+//Hunt-McIlroy Algorithm
+//H-A utilizes the longest common subsquence to create a new file; 
+//however, we are going to use the length of the longest to return the value of the length.
+
 // huntMcIlroyDistance() - determines Hunt-McIlroy distance between 2 strings
 double huntMcIlroyDistance(const string& s1, const string& s2){
-	// fill in
-	return 0.0;
+	//get size of files. For our purposes, each file has one line.
+	const int m(s1.size());
+	const int n(s2.size());
+
+	//variables for iteration and storage
+	int i, j, maxRow = 0;
+	kCandidate *kList;
+
+	kList = (kCandidate*)calloc(min(m, n) + 1, sizeof(kCandidate));
+	//find match
+	for (i = 0; i < m; i++){
+		for (j = n; j > 0; j--){
+			if (s1[i] == s2[j]){
+				maxRow = huntMcIlroyAlg(kList, i, j, maxRow);
+			}
+		}
+	}
+
+	return (double)maxRow;
+}
+
+//function used to determine kValues
+int huntMcIlroyAlg(kCandidate *kList, int i, int j, int maxRow)
+{
+	if (maxRow == 0){
+		kList[1].coord1 = i;
+		kList[1].coord2 = j;
+		maxRow++;
+	}
+	else {
+		if (i < kList[1].coord1){
+			kList[1].coord1 = i;
+			kList[1].coord2 = j;
+		}
+		else if (i > kList[maxRow - 1].coord1){
+			kList[maxRow].coord1 = i;
+			kList[maxRow].coord2 = j;
+			maxRow++;
+		}
+		else {
+			binSearch(kList, i, j, maxRow);
+		}
+	}
+	return maxRow;
+}
+
+void binSearch(kCandidate *kList, int i, int j, int k){
+	int high = k;
+	int low = 1;
+	int mid;
+
+	while (high >= low){
+		mid = (high + low) / 2;
+		if (i == kList[mid].coord1){
+			return;
+		}
+		if (i < kList[mid].coord1){
+			high = mid - 1;
+		}
+		else {
+			low = mid + 1;
+		}
+	}
+	kList[mid].coord1 = i;
+	kList[mid].coord2 = j;
+	return;
 }
 
 
@@ -562,6 +636,7 @@ const int jaroCommonPrefix(const string& s1, const string& s2, const int& m, con
 		else
 			break;
 	}
+
 	return l;
 }
 
