@@ -1,0 +1,80 @@
+//Hunt-McIlroy Algorithm
+//H-A utilizes the longest common subsquence to create a new file; 
+//however, we are going to use the length of the longest to return the value of the length.
+
+//This struct represents the coordinate values of the locations of k-matches
+struct kCandidate {
+	int coord1;
+	int coord2;
+};
+
+// function
+// huntMcIlroyDistance() - determines Hunt-McIlroy distance between 2 strings
+double huntMcIlroyDistance(const string& file1, const string& file2){
+	//get size of files. For our purposes, each file has one line.
+	const int m(s1.size());
+	const int n(s2.size());
+	
+	//variables for iteration and storage
+	int i, j, maxRow = 0;
+	kCandidate *kList; 
+	
+	kList = (kCandidate*) calloc(min(m, n) + 1, sizeof(kCandidate));
+	//find match
+	for(i = 0; i < m; i++){
+		for(j = n; j > 0; j--){
+			if(file1[i] == file2[j]){
+				maxRow = huntMcIlroyAlg(kList, i, j, maxRow);
+			}
+		}
+	}
+	
+	return (double)maxRow;
+}
+
+//function used to determine kValues
+int huntMcIlroyAlg(kCandidate *kList, int i, int j, int maxRow)
+{
+	if(maxRow == 0){
+		kList[1].coord1 = i;
+		kList[1].coord2 = j;
+		maxRow++;
+	}
+	else {
+		if(i < kList[1].coord1){
+			kList[1].coord1 = i;
+			kList[1].coord2 = j;
+		}
+		else if(i > kList[maxRow].coord1){
+			kList[maxRow].coord1 = i;
+			kList[maxRow].coord2 = j;
+			maxRow = maxRow + 1;
+		}
+		else {
+			binSearch(kList, i, j, maxRow);
+		}
+	}
+	return maxRow;
+}
+
+void binSearch(kCandidate *kList, int i, int j, int k){
+	int high = k;
+	int low = 1;
+	int mid;
+			
+	while(high >= low){
+		mid = (high+low)/2;		
+		if(i == kList[mid].coord1){
+			return;
+		}
+		if(i < kList[mid].coord1){
+			high = mid - 1;
+		}
+		else {
+			low = mid + 1;
+		}
+	}
+	kList[mid].coord1 = i;
+	kList[mid].coord2 = j;
+	return;
+}
