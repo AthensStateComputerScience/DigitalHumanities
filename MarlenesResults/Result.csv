@@ -1,0 +1,5 @@
+Method, 1 -> 2, 1 -> 3, 2 -> 3, Time
+Levenshtein's Distance, 11, 14, 6, 0.062182
+Jaro-Winkler Distance, 0.83084, 0.899733, 0.900975, 0.062182
+Hunt-McIlroy Distance, 76, 78, 77, 0.0485797
+Needleman-Wunsch Distance, 50, 40, 64, 0.031091
