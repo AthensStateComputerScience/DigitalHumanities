@@ -483,10 +483,10 @@ double huntMcIlroyDistance(const string& s1, const string& s2){
 	int i, j, maxRow = 0;
 	kCandidate *kList;
 
-	kList = (kCandidate*)calloc(min(m, n) + 1, sizeof(kCandidate));
+	kList = (kCandidate*)calloc(max(m, n) + 1, sizeof(kCandidate));
 	//find match
 	for (i = 0; i < m; i++){
-		for (j = n; j > 0; j--){
+		for (j = 0; j < n; j++){
 			if (s1[i] == s2[j]){
 				maxRow = huntMcIlroyAlg(kList, i, j, maxRow);
 			}
