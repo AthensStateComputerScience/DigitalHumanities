@@ -69,8 +69,6 @@ const int jaroCommonPrefix(const string&, const string&, const int&, const int&)
 const double jaroPFX(const int&, const double&, const double&);
 void huntMcIlroy(vector<string>&);
 double huntMcIlroyDistance(const string&, const string&);
-int huntMcIlroyAlg(kCandidate*, int, int, int);
-void binSearch(kCandidate*, int, int, int);
 void needlemanWunsch(vector<string>&);
 double needlemanWunschDistance(const string&, const string&);
 void getFilesInDirectory(vector<string>&, const string&);
