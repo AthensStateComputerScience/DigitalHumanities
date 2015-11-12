@@ -229,7 +229,7 @@ void processFiles(vector<string>& files, vector<string>& texts){
 			filetext = filetext + line;
 		}
 
-		cout << filetext << endl;
+		cout << filetext << endl << endl;
 
 		// push it into the texts vector
 		texts.push_back(filetext);
@@ -481,19 +481,26 @@ double huntMcIlroyDistance(const string& s1, const string& s2){
 
 	//variables for iteration and storage
 	int i, j, maxRow = 0;
-	kCandidate *kList;
+	int kValue = 0;
 
-	kList = (kCandidate*)calloc(max(m, n) + 1, sizeof(kCandidate));
-	//find match
-	for (i = 0; i < m; i++){
+	//find matching subsequences
+	for (i = 0; i < m; i++) {
 		for (j = 0; j < n; j++){
-			if (s1[i] == s2[j]){
-				maxRow = huntMcIlroyAlg(kList, i, j, maxRow);
+			while (s1[i] == s2[j]) {
+				i++;
+				j++;
+				if (i >= m || j >= n)
+					break;
+				maxRow++;
 			}
+
+			if (kValue < maxRow){
+				kValue = maxRow;
+			}
+			maxRow = 0;
 		}
 	}
-
-	return (double)maxRow;
+	return (double)kValue;
 }
 
 //function used to determine kValues
