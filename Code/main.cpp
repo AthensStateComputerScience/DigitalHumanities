@@ -489,7 +489,7 @@ double huntMcIlroyDistance(const string& s1, const string& s2){
 			while (s1[i] == s2[j]) {
 				i++;
 				j++;
-				if (i == m || j == n)
+				if (i > m || j > n)
 					break;
 				maxRow++;
 			}
@@ -501,53 +501,6 @@ double huntMcIlroyDistance(const string& s1, const string& s2){
 		}
 	}
 	return (double)kValue;
-}
-
-//function used to determine kValues
-int huntMcIlroyAlg(kCandidate *kList, int i, int j, int maxRow)
-{
-	if (maxRow == 0){
-		kList[1].coord1 = i;
-		kList[1].coord2 = j;
-		maxRow++;
-	}
-	else {
-		if (i < kList[1].coord1){
-			kList[1].coord1 = i;
-			kList[1].coord2 = j;
-		}
-		else if (i > kList[maxRow - 1].coord1){
-			kList[maxRow].coord1 = i;
-			kList[maxRow].coord2 = j;
-			maxRow++;
-		}
-		else {
-			binSearch(kList, i, j, maxRow);
-		}
-	}
-	return maxRow;
-}
-
-void binSearch(kCandidate *kList, int i, int j, int k){
-	int high = k;
-	int low = 1;
-	int mid;
-
-	while (high >= low){
-		mid = (high + low) / 2;
-		if (i == kList[mid].coord1){
-			return;
-		}
-		if (i < kList[mid].coord1){
-			high = mid - 1;
-		}
-		else {
-			low = mid + 1;
-		}
-	}
-	kList[mid].coord1 = i;
-	kList[mid].coord2 = j;
-	return;
 }
 
 
