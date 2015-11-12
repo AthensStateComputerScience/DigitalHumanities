@@ -489,7 +489,7 @@ double huntMcIlroyDistance(const string& s1, const string& s2){
 			while (s1[i] == s2[j]) {
 				i++;
 				j++;
-				if (i >= m || j >= n)
+				if (i == m || j == n)
 					break;
 				maxRow++;
 			}
